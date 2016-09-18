@@ -59,6 +59,11 @@ int split_secret(const mpz_t secret,
 		return EINVAL;
 	}
 
+	/* Test the supplied prime */
+	if (mpz_probab_prime_p(prime, 100) < 1) {
+		return EINVAL;
+	}
+
 	/*
 	This is the only place where we need malloc. If this code needs
 	to be ported into an "malloc-less" platform, then the following
@@ -139,6 +144,11 @@ int reconstruct_secret(const unsigned int num_shares,
 	mpz_t reconstructed;
 
 	if (shares_xs == NULL || shares_ys == NULL) {
+		return EINVAL;
+	}
+
+	/* Test the supplied prime */
+	if (mpz_probab_prime_p(prime, 100) < 1) {
 		return EINVAL;
 	}
 
