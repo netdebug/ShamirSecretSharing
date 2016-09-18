@@ -26,7 +26,7 @@ static void gen_unique_random_list(
 		mpz_init(list[i]);
 		is_unique = 0;
 		while (!is_unique) {
-spin:			mpz_urandomb(list[i], rng_state, element_size);
+spin:			mpz_urandomb(list[i], rng_state, (unsigned long) element_size);
 			mpz_add_ui(list[i], list[i], 1);
 			for (j = 0; j < i; j++) {
 				if (mpz_cmp(list[i], list[j]) == 0) {
@@ -86,7 +86,12 @@ int split_secret(const mpz_t secret,
 		mpz_init_set(y, secret);
 		mpz_init_set_ui(degree, 1);
 		for (j = 0; j < (threshold - 1); j++) {
+		/* libgmp on Windows currently does not support the _sec version */
+#if defined(_WIN32) || defined(_WIN64)
+			mpz_powm(tmp, shares_xs[i], degree, prime);
+#else
 			mpz_powm_sec(tmp, shares_xs[i], degree, prime);
+#endif
 			mpz_addmul(y, coefficients[j], tmp);
 			mpz_add_ui(degree, degree, 1);
 		}

@@ -4,26 +4,34 @@ project(ShamirSecretSharing)
 
 include(CTest)
 
-# Find GMP on the system
-find_path(GMP_INCLUDE_DIR NAMES gmp.h)
+# Find GMP on the system. Use GMP_PATH as a hint for this CMake script
+find_path(GMP_INCLUDE_DIR NAMES gmp.h PATHS ENV GMP_PATH)
 if(NOT GMP_INCLUDE_DIR)
-    message(FATAL_ERROR "libgmp header files could not be found!")
+	message(FATAL_ERROR "GNU Multiprecision (GMP) library header files could not be found!")
 endif()
-find_library(GMP_LIBRARIES gmp)
-if(NOT EXISTS ${GMP_LIBRARIES})
-    message(FATAL_ERROR "libgmp library could not be found!")
+find_library(GMP_LIBRARY gmp PATHS ENV GMP_PATH)
+if(NOT EXISTS ${GMP_LIBRARY})
+	message(FATAL_ERROR "GNU Multiprecision (GMP) library could not be found!")
 endif()
+get_filename_component(GMP_LIBRARY_DIR ${GMP_LIBRARY} PATH)
 
 include_directories(${GMP_INCLUDE_DIR})
+link_directories(${GMP_LIBRARY_DIR})
 include_directories(src)
 
 # Base common flags between GCC and Clang
-if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
-   ${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-  set(CMAKE_C_FLAGS "-std=c89 -Wall -Wextra -Werror")
-endif()
-if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
+if(UNIX)
+	if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
+		${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+		set(CMAKE_C_FLAGS "-std=c89 -Wall -Wextra -Werror")
+	endif()
+	if(${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Weverything")
+	endif()
+elseif(WIN32)
+	if (MSVC)
+		set(CMAKE_C_FLAGS "/Za /W4")
+	endif()
 endif()
 
 # Build the library
