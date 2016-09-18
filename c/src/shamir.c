@@ -91,12 +91,7 @@ int split_secret(const mpz_t secret,
 		mpz_init_set(y, secret);
 		mpz_init_set_ui(degree, 1);
 		for (j = 0; j < (threshold - 1); j++) {
-		/* libgmp on Windows currently does not support the _sec version */
-#if defined(_WIN32) || defined(_WIN64)
-			mpz_powm(tmp, shares_xs[i], degree, prime);
-#else
 			mpz_powm_sec(tmp, shares_xs[i], degree, prime);
-#endif
 			mpz_addmul(y, coefficients[j], tmp);
 			mpz_add_ui(degree, degree, 1);
 		}
@@ -123,6 +118,7 @@ int split_secret(const mpz_t secret,
 	gmp_randclear(rng_state);
 	/* Clear data */
 	for (i = 0; i < (threshold - 1); i++) {
+		mpz_init_set_ui(coefficients[i], 0);
 		mpz_clear(coefficients[i]);
 	}
 	free(coefficients);
@@ -181,6 +177,7 @@ int reconstruct_secret(const unsigned int num_shares,
 		mpz_clear(product);
 	}
 	mpz_init_set(secret, reconstructed);
+	mpz_init_set_ui(reconstructed, 0);
 	mpz_clear(reconstructed);
 
 	return EXIT_SUCCESS;
