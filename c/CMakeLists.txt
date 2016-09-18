@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.4)
 
 project(ShamirSecretSharing)
 
@@ -14,7 +14,7 @@ if(NOT EXISTS ${GMP_LIBRARIES})
     message(FATAL_ERROR "libgmp library could not be found!")
 endif()
 
-include_directories(${GMP_INCLUDES})
+include_directories(${GMP_INCLUDE_DIR})
 include_directories(src)
 
 # Base common flags between GCC and Clang
