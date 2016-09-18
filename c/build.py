@@ -21,13 +21,13 @@ def main():
             generator = 'NMake Makefiles'
 
         out = subprocess.check_output("cmake -G \"" + generator + "\" ..", shell=True, stderr=subprocess.STDOUT)
-        print(str(out))
+        print(str(out.decode("utf-8")))
         out = subprocess.check_output(["cmake", "--build", ".", "--target", "all"], stderr=subprocess.STDOUT)
-        print(str(out))
+        print(str(out.decode("utf-8")))
         out = subprocess.check_output(["ctest", "-T", "Test"], stderr=subprocess.STDOUT)
-        print(str(out))
+        print(str(out.decode("utf-8")))
         out = subprocess.check_output(["ctest", "-T", "memcheck"], stderr=subprocess.STDOUT)
-        print(str(out))
+        print(str(out.decode("utf-8")))
         sys.exit(0)
     except Exception as e:
         sys.stderr.write(str(e) + "\n")
