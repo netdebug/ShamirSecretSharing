@@ -70,7 +70,7 @@ int split_secret(const mpz_t secret,
 		return ENOMEM;
 	}
 
-	srand(time(NULL));
+	srand((unsigned int) time(NULL));
 	gmp_randinit_default(rng_state);
 	gmp_randseed_ui(rng_state, rand());
 	prime_size = mpz_sizeinbase(prime, 2);
