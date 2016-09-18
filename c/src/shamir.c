@@ -110,15 +110,15 @@ int split_secret(const mpz_t secret,
 
 	if (retval != EXIT_SUCCESS) {
 		for (i = 0; i < num_shares; i++) {
-			mpz_init_set_ui(shares_xs[i], 0);
-			mpz_init_set_ui(shares_ys[i], 0);
+			mpz_set_ui(shares_xs[i], 0);
+			mpz_set_ui(shares_ys[i], 0);
 		}
 	}
 
 	gmp_randclear(rng_state);
 	/* Clear data */
 	for (i = 0; i < (threshold - 1); i++) {
-		mpz_init_set_ui(coefficients[i], 0);
+		mpz_set_ui(coefficients[i], 0);
 		mpz_clear(coefficients[i]);
 	}
 	free(coefficients);
@@ -177,7 +177,7 @@ int reconstruct_secret(const unsigned int num_shares,
 		mpz_clear(product);
 	}
 	mpz_init_set(secret, reconstructed);
-	mpz_init_set_ui(reconstructed, 0);
+	mpz_set_ui(reconstructed, 0);
 	mpz_clear(reconstructed);
 
 	return EXIT_SUCCESS;
