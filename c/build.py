@@ -26,15 +26,12 @@ def main():
         print(str(out))
         out = subprocess.check_output(["ctest", "-T", "Test"], stderr=subprocess.STDOUT)
         print(str(out))
+        out = subprocess.check_output(["ctest", "-T", "memcheck"], stderr=subprocess.STDOUT)
+        print(str(out))
+        sys.exit(0)
     except Exception as e:
         sys.stderr.write(str(e) + "\n")
         sys.exit(1)
-    try:
-        subprocess.check_output(["ctest", "-T", "memcheck"], stderr=subprocess.STDOUT)
-    except Exception as e:
-        sys.stderr.write(str(e) + "\n")
-        sys.stderr.write("Memory checking is not possible...\n")
-        sys.exit(0)
 
 if __name__ == "__main__":
     main()
