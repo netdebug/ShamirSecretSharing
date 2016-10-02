@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "shamir.h"
+#include "test.h"
 
 #define N (7)
 
@@ -18,16 +18,16 @@ int main()
 	mpz_init_set_str(secret, "1234", 10);
 	mpz_init_set_str(prime, prime_str, 10);
 	retval = split_secret(secret, N, 4, prime, xs, ys);
-	assert(retval == EXIT_SUCCESS);
+	massert(retval == EXIT_SUCCESS);
 
 	for (i = 1; i < N; i++) {
 		retval = reconstruct_secret(i, (const mpz_t *)xs,
 				(const mpz_t *)ys, prime, reconstructed);
 		if (i >= 4) {
-			assert(retval == EXIT_SUCCESS && \
+			massert(retval == EXIT_SUCCESS && \
 				mpz_cmp(reconstructed, secret) == 0);
 		} else {
-			assert(retval == EXIT_SUCCESS && \
+			massert(retval == EXIT_SUCCESS && \
 				mpz_cmp(reconstructed, secret) != 0);
 		}
 		mpz_clear(reconstructed);

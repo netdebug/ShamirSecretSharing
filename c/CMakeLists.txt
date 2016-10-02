@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(ShamirSecretSharing)
 
+set(CMAKE_BUILD_TYPE "Release")
+
 include(CTest)
 
 # Find GMP on the system. Use GMP_PATH as a hint for this CMake script

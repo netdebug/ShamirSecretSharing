@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <errno.h>
-#include <assert.h>
 
 #include <gmp.h>
 
@@ -17,10 +16,9 @@ static void gen_unique_random_list(
 	size_t i = 0, j = 0;
 	int is_unique = 0;
 
-	assert(list != NULL);
-	assert(list_length > 0);
-	assert(element_size > 0);
-	assert(rng_state != NULL);
+	if (!list || list_length <= 0 || element_size <= 0 || !rng_state) {
+		abort();
+	}
 
 	for (i = 0; i < list_length; i++) {
 		mpz_init(list[i]);
@@ -60,7 +58,7 @@ int split_secret(const mpz_t secret,
 	}
 
 	/* Test the supplied prime */
-	if (mpz_probab_prime_p(prime, 100) < 1) {
+	if (mpz_probab_prime_p(prime, 50) < 1) {
 		return EINVAL;
 	}
 
@@ -165,7 +163,7 @@ int reconstruct_secret(const unsigned int num_shares,
 			if (m != j) {
 				mpz_sub(d, shares_xs[m], shares_xs[j]);
 				retval = mpz_invert(d, d, prime);
-				assert(retval != 0);
+				if (retval == 0) goto ERR;
 				mpz_mul(r, shares_xs[m], d);
 				mpz_mul(product, product, r);
 			}
@@ -181,4 +179,10 @@ int reconstruct_secret(const unsigned int num_shares,
 	mpz_clear(reconstructed);
 
 	return EXIT_SUCCESS;
+ERR:
+	mpz_clear(d);
+	mpz_clear(r);
+	mpz_clear(product);
+	mpz_clear(reconstructed);
+	return EXIT_FAILURE;
 }
