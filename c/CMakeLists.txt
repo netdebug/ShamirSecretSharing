@@ -23,7 +23,10 @@ include_directories(src)
 
 # Base common flags between GCC and Clang
 if(UNIX)
-	add_definitions(-D_FORTIFY_SOURCE=1)
+	if(CMAKE_BUILD_TYPE STREQUAL "Release" OR
+	CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+		add_definitions(-D_FORTIFY_SOURCE=1)
+	endif()
 	if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
 		${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
 		set(CMAKE_C_FLAGS "-std=c89 -Wall -Wextra -Werror")
@@ -41,15 +44,15 @@ endif()
 add_library(shamir STATIC src/shamir.c)
 
 # Build the tests
-add_executable(test1 tests/test1.c)
-target_link_libraries(test1 shamir gmp)
-add_executable(test2 tests/test2.c)
-target_link_libraries(test2 shamir gmp)
+add_executable(shamir_test1 tests/test1.c)
+target_link_libraries(shamir_test1 shamir gmp)
+add_executable(shamir_test2 tests/test2.c)
+target_link_libraries(shamir_test2 shamir gmp)
 
-add_test(NAME test_test1 COMMAND test1)
-set_tests_properties(test_test1 PROPERTIES DEPENDS test1)
-add_test(NAME test_test2 COMMAND test2)
-set_tests_properties(test_test2 PROPERTIES DEPENDS test2)
+add_test(NAME test_shamir_test1 COMMAND shamir_test1)
+set_tests_properties(test_shamir_test1 PROPERTIES DEPENDS shamir_test1)
+add_test(NAME test_shamir_test2 COMMAND shamir_test2)
+set_tests_properties(test_shamir_test2 PROPERTIES DEPENDS shamir_test2)
 
 # Install the stuff
 install(FILES src/shamir.h DESTINATION include)
