@@ -23,6 +23,7 @@ include_directories(src)
 
 # Base common flags between GCC and Clang
 if(UNIX)
+	add_definitions(-D_FORTIFY_SOURCE=1)
 	if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU" OR
 		${CMAKE_C_COMPILER_ID} STREQUAL "Clang")
 		set(CMAKE_C_FLAGS "-std=c89 -Wall -Wextra -Werror")

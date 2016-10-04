@@ -36,24 +36,23 @@ spin:			mpz_urandomb(list[i], rng_state, (unsigned long) element_size);
 	}
 }
 
-int split_secret(const mpz_t secret,
+int split_secret(
+		const mpz_t secret,
 		const unsigned int num_shares,
 		const unsigned int threshold,
 		const mpz_t prime,
-		mpz_t * shares_xs,
-		mpz_t * shares_ys)
+		share_t * shares)
 {
 	unsigned int i = 0, j = 0;
 	size_t prime_size = 0;
 	int retval = EXIT_SUCCESS;
-	mpz_t * coefficients = NULL;
+	mpz_t * coefficients = NULL, * xs = NULL;
 	mpz_t y, tmp, degree;
 	gmp_randstate_t rng_state;
 
 	/* Check the inputs */
-	if (mpz_cmp(secret, prime) >= 0 || shares_xs == NULL ||
-		shares_ys == NULL || threshold > num_shares ||
-		threshold < 1 || num_shares < 1) {
+	if (mpz_cmp(secret, prime) >= 0 || !shares || threshold < 1 ||
+		threshold > num_shares || num_shares < 1) {
 		return EINVAL;
 	}
 
@@ -69,7 +68,8 @@ int split_secret(const mpz_t secret,
 	array with pre-defined maximum threshold.
 	*/
 	coefficients = (mpz_t *) malloc((threshold - 1) * sizeof(mpz_t));
-	if (coefficients == NULL) {
+	xs = (mpz_t *) malloc(num_shares * sizeof(mpz_t));
+	if (!coefficients || !xs) {
 		return ENOMEM;
 	}
 
@@ -78,28 +78,28 @@ int split_secret(const mpz_t secret,
 	gmp_randseed_ui(rng_state, rand());
 	prime_size = mpz_sizeinbase(prime, 2);
 
-	/* Initialize coefficients and shares_xs */
+	/* Initialize coefficients and xs */
 	gen_unique_random_list(threshold-1, prime_size-1,
 		coefficients, rng_state);
 	gen_unique_random_list(num_shares, prime_size-1,
-		shares_xs, rng_state);
+		xs, rng_state);
 
 	mpz_init(tmp);
 	for (i = 0; i < num_shares; i++) {
+		mpz_set(shares[i].x, xs[i]);
 		mpz_init_set(y, secret);
 		mpz_init_set_ui(degree, 1);
 		for (j = 0; j < (threshold - 1); j++) {
-			mpz_powm_sec(tmp, shares_xs[i], degree, prime);
+			mpz_powm_sec(tmp, shares[i].x, degree, prime);
 			mpz_addmul(y, coefficients[j], tmp);
 			mpz_add_ui(degree, degree, 1);
 		}
 		mpz_clear(degree);
-		mpz_init(shares_ys[i]);
 		mpz_mod(y, y, prime);
-		mpz_set(shares_ys[i], y);
+		mpz_set(shares[i].y, y);
 		mpz_clear(y);
-		if (mpz_cmp(shares_xs[i], secret) == 0 ||
-			mpz_cmp(shares_ys[i], secret) == 0) {
+		if (mpz_cmp(shares[i].x, secret) == 0 ||
+			mpz_cmp(shares[i].y, secret) == 0) {
 			retval = EINVAL;
 			break;
 		}
@@ -108,27 +108,31 @@ int split_secret(const mpz_t secret,
 
 	if (retval != EXIT_SUCCESS) {
 		for (i = 0; i < num_shares; i++) {
-			mpz_set_ui(shares_xs[i], 0);
-			mpz_set_ui(shares_ys[i], 0);
+			mpz_set_ui(shares[i].x, 0);
+			mpz_set_ui(shares[i].y, 0);
 		}
 	}
 
-	gmp_randclear(rng_state);
 	/* Clear data */
+	gmp_randclear(rng_state);
+	for (i = 0; i < num_shares; i++) {
+		mpz_set_ui(xs[i], 0);
+		mpz_clear(xs[i]);
+	}
 	for (i = 0; i < (threshold - 1); i++) {
 		mpz_set_ui(coefficients[i], 0);
 		mpz_clear(coefficients[i]);
 	}
-	free(coefficients);
-	coefficients = NULL;
+	free(coefficients); coefficients = NULL;
+	free(xs); xs = NULL;
 
 	return retval;
 }
 
 
-int reconstruct_secret(const unsigned int num_shares,
-		const mpz_t * shares_xs,
-		const mpz_t * shares_ys,
+int reconstruct_secret(
+		const unsigned int num_shares,
+		const share_t * shares,
 		const mpz_t prime,
 		mpz_t secret)
 {
@@ -137,18 +141,18 @@ int reconstruct_secret(const unsigned int num_shares,
 	mpz_t product, d, r;
 	mpz_t reconstructed;
 
-	if (shares_xs == NULL || shares_ys == NULL) {
+	if (!shares) {
 		return EINVAL;
 	}
 
 	/* Test the supplied prime */
-	if (mpz_probab_prime_p(prime, 100) < 1) {
+	if (mpz_probab_prime_p(prime, 50) < 1) {
 		return EINVAL;
 	}
 
 	for (j = 0; j < num_shares; j++) {
-		if (mpz_cmp(shares_xs[j], prime) >= 0 ||
-			mpz_cmp(shares_ys[j], prime) >= 0) {
+		if (mpz_cmp(shares[j].x, prime) >= 0 ||
+			mpz_cmp(shares[j].y, prime) >= 0) {
 			return EINVAL;
 		}
 	}
@@ -161,20 +165,20 @@ int reconstruct_secret(const unsigned int num_shares,
 			mpz_init(d);
 			mpz_init(r);
 			if (m != j) {
-				mpz_sub(d, shares_xs[m], shares_xs[j]);
+				mpz_sub(d, shares[m].x, shares[j].x);
 				retval = mpz_invert(d, d, prime);
-				if (retval == 0) goto ERR;
-				mpz_mul(r, shares_xs[m], d);
+				if (0 == retval) goto ERR;
+				mpz_mul(r, shares[m].x, d);
 				mpz_mul(product, product, r);
 			}
 			mpz_clear(d);
 			mpz_clear(r);
 		}
-		mpz_addmul(reconstructed, shares_ys[j], product);
+		mpz_addmul(reconstructed, shares[j].y, product);
 		mpz_mod(reconstructed, reconstructed, prime);
 		mpz_clear(product);
 	}
-	mpz_init_set(secret, reconstructed);
+	mpz_set(secret, reconstructed);
 	mpz_set_ui(reconstructed, 0);
 	mpz_clear(reconstructed);
 
